@@ -1,0 +1,7 @@
+p, 1, /api/user, GET
+p, 1, /api/user, DEL
+p, 2, /api/creator, GET
+p, 3, /api/wallet, GET
+g, alice, 1
+g, bob, 2
+g, jack, 3
