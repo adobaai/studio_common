@@ -5,7 +5,7 @@ import (
 	"github.com/casbin/casbin/v2/model"
 	"github.com/jmoiron/sqlx"
 
-	"studio_common/rule/adapter"
+	"github.com/adobaai/studio_common/rule/adapter"
 )
 
 const modelText = `

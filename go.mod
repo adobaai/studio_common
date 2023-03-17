@@ -1,4 +1,4 @@
-module studio_common
+module github.com/adobaai/studio_common
 
 go 1.19
 
