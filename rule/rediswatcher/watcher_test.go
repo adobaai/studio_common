@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"github.com/casbin/casbin/v2"
-	"github.com/go-redis/redis"
+	"github.com/go-redis/redis/v8"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -17,6 +17,7 @@ func initWatcherOptions(t *testing.T, ignore, noSub bool) (op *WatcherOptions) {
 		t.Fatalf("Failed to create enforcer: %v", err)
 	}
 
+	// dev: 47.104.210.115:6379
 	rds := redis.NewClient(&redis.Options{Addr: fmt.Sprintf("127.0.0.1:6379")})
 	op = &WatcherOptions{
 		Rds:         rds,

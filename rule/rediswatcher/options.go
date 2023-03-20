@@ -4,7 +4,7 @@ import (
 	"errors"
 
 	"github.com/casbin/casbin/v2"
-	rds "github.com/go-redis/redis"
+	rds "github.com/go-redis/redis/v8"
 	"github.com/google/uuid"
 )
 

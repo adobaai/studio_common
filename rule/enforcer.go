@@ -8,6 +8,13 @@ import (
 	"github.com/adobaai/studio_common/rule/adapter"
 )
 
+// modelText
+// keyMatch3
+// - "/foo/bar" matches "/foo/*"
+// - "/resource1" matches "/{resource}"
+// keyMatch5
+// - "/foo/bar?status=1&type=2" matches "/foo/bar"
+// - "/parent/child1" matches "/parent/*"
 const modelText = `
 [request_definition]
 r = sub, obj, act

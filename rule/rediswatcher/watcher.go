@@ -1,6 +1,7 @@
 package rediswatcher
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"sync"
@@ -8,7 +9,7 @@ import (
 	"github.com/casbin/casbin/v2"
 	"github.com/casbin/casbin/v2/model"
 	"github.com/casbin/casbin/v2/persist"
-	rds "github.com/go-redis/redis"
+	rds "github.com/go-redis/redis/v8"
 )
 
 type Watcher struct {
@@ -17,6 +18,7 @@ type Watcher struct {
 	options  *WatcherOptions
 	close    chan struct{}
 	callback func(string)
+	ctx      context.Context
 }
 
 func (w *Watcher) defaultUpdateCallback(e casbin.IEnforcer) (f func(string)) {
@@ -105,6 +107,7 @@ func (m *MSG) UnmarshalBinary(data []byte) error {
 // setters allows for inline WatcherOptions
 func NewWatcher(op *WatcherOptions) (persist.Watcher, error) {
 	w := &Watcher{
+		ctx:   context.Background(),
 		close: make(chan struct{}),
 	}
 	if err := w.initOptions(op); err != nil {
@@ -112,7 +115,7 @@ func NewWatcher(op *WatcherOptions) (persist.Watcher, error) {
 	}
 
 	if !op.NoSubscribe {
-		w.pubSub = op.Rds.Subscribe(op.Channel)
+		w.pubSub = op.Rds.Subscribe(w.ctx, op.Channel)
 		w.subscribe()
 	}
 
@@ -289,7 +292,7 @@ func (w *Watcher) Close() {
 	w.mux.Lock()
 	defer w.mux.Unlock()
 	close(w.close)
-	w.options.Rds.Publish(w.options.Channel, "close")
+	w.options.Rds.Publish(w.ctx, w.options.Channel, "close")
 }
 
 func (w *Watcher) logRecord(f func() error, t UpdateType) (err error) {
@@ -303,12 +306,12 @@ func (w *Watcher) logRecord(f func() error, t UpdateType) (err error) {
 func (w *Watcher) publish(msg *MSG) error {
 	w.mux.Lock()
 	defer w.mux.Unlock()
-	return w.options.Rds.Publish(w.options.Channel, msg).Err()
+	return w.options.Rds.Publish(w.ctx, w.options.Channel, msg).Err()
 }
 
 func (w *Watcher) subscribe() {
 	var (
-		sub = w.options.Rds.Subscribe(w.options.Channel)
+		sub = w.options.Rds.Subscribe(w.ctx, w.options.Channel)
 		wg  = sync.WaitGroup{}
 		l   = w.options.Log
 	)
@@ -320,7 +323,7 @@ func (w *Watcher) subscribe() {
 				l.Errorf("sub closed err: %v", err)
 			}
 			if err := w.pubSub.Close(); err != nil {
-				l.Errorf("pubsub closed err: %v", err)
+				l.Errorf("pubSub closed err: %v", err)
 			}
 		}()
 		ch := sub.Channel()
