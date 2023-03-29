@@ -1,0 +1,17 @@
+# Reference https://github.com/github/gitignore/blob/master/Go.gitignore
+# Binaries for programs and plugins
+.idea
+*.exe
+*.exe~
+
+# Dependency directories (remove the comment below to include it)
+vendor/
+
+# OS General
+Thumbs.db
+.DS_Store
+
+# Develop tools
+.vscode/
+.idea/
+*.swp

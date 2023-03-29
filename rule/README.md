@@ -1,9 +1,8 @@
 ## Description
-Studio的用户权限验证器生成、`rediswatcher`策略同步
+用于Studio的用户权限验证器生成、`rediswatcher`保持各个节点的策略同步
 
 ## Watcher
-考虑使用`redis`来保持多个`casbin`执行器实例之间的一致性。
-可以直接借助`redis`的消息发布订阅机制，实现各个节点之间策略数据的增量同步
+使用`redis`来保持多个`casbin`执行器实例之间的一致性， 直接借助`redis`的消息发布订阅机制，实现各个节点之间策略数据的增量同步。
 
 ### Adopter
 
