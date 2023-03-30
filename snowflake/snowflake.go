@@ -1,7 +1,8 @@
 package snowflake
 
 import (
-	"fmt"
+	"crypto/rand"
+	"math/big"
 	"sync"
 	"time"
 )
@@ -10,7 +11,7 @@ type uid struct {
 	sync.Mutex
 	timestamp int64  // 单位ms
 	sequence  uint32 // 序列号
-	machineID uint32 // 机器id
+	machineID int64  // 机器id
 }
 
 const (
@@ -18,17 +19,18 @@ const (
 	machineIDBits uint8  = 8
 	sequenceBits  uint8  = 24                        // 序列所占的位数
 	maxSequence   uint32 = -1 ^ (-1 << sequenceBits) // 支持的最大序列id数量
-	maxMachineId  uint32 = -1 ^ (-1 << machineIDBits)
+	maxMachineId  int64  = -1 ^ (-1 << machineIDBits)
 	keep32Bits    int64  = -1 ^ (-1 << 32) + 1
 )
 
-func NewUidGenerator(mid uint32) (*uid, error) {
-	if mid > maxMachineId || mid == 0 {
-		return nil, fmt.Errorf("machine id must be between 0 and %d", maxMachineId)
+func NewUidGenerator(mid int64) *uid {
+	id := new(uid)
+	if mid > maxMachineId || mid < 1 {
+		num, _ := rand.Int(rand.Reader, big.NewInt(maxMachineId+1))
+		mid = num.Int64()
 	}
-	return &uid{
-		machineID: mid,
-	}, nil
+	id.machineID = mid
+	return id
 }
 
 func (u *uid) NextUID() (uid uint32) {
@@ -50,6 +52,6 @@ func (u *uid) NextUID() (uid uint32) {
 	}
 	u.timestamp = now
 	t := (u.timestamp - epoch) << sequenceBits
-	t = t | int64(u.machineID<<machineIDBits) | int64(u.sequence)
+	t = t | u.machineID<<machineIDBits | int64(u.sequence)
 	return uint32(t | keep32Bits)
 }

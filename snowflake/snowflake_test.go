@@ -29,7 +29,7 @@ func Test_TwoMachinesGenerateUID(t *testing.T) {
 	wg.Add(num)
 	for g := 1; g <= num; g++ {
 		go func(g int) {
-			id, _ := NewUidGenerator(uint32(g))
+			id := NewUidGenerator(int64(g))
 			for i := 0; i < 100; i++ {
 				ch <- id.NextUID()
 			}
@@ -46,7 +46,7 @@ func Test_TwoMachinesGenerateUID(t *testing.T) {
 
 func Test_10000UidGenerate(t *testing.T) {
 	start := time.Now().UnixMilli()
-	id, _ := NewUidGenerator(1)
+	id := NewUidGenerator(0)
 	mid := make(map[uint32]struct{})
 
 	for i := 0; i < 10000; i++ {
@@ -60,5 +60,4 @@ func Test_10000UidGenerate(t *testing.T) {
 	}
 
 	t.Logf("speed milli seconds: %d ms ", time.Now().UnixMilli()-start)
-
 }
