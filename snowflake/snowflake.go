@@ -9,18 +9,18 @@ import (
 
 type uid struct {
 	sync.Mutex
-	timestamp int64  // 单位ms
-	sequence  uint32 // 序列号
-	machineID int64  // 机器id
+	timestamp int64 // 单位ms
+	sequence  int64 // 序列号
+	machineID int64 // 机器id
 }
 
 const (
-	epoch         int64  = 1640966400000 // 起始时间: 2022-01-01 00:00:00
-	machineIDBits uint8  = 8
-	sequenceBits  uint8  = 24                        // 序列所占的位数
-	maxSequence   uint32 = -1 ^ (-1 << sequenceBits) // 支持的最大序列id数量
-	maxMachineId  int64  = -1 ^ (-1 << machineIDBits)
-	keep32Bits    int64  = -1 ^ (-1 << 32) + 1
+	epoch         int64 = 1640966400000 // 起始时间: 2022-01-01 00:00:00
+	machineIDBits uint8 = 5
+	sequenceBits  uint8 = 12                        // 序列号所占的位数
+	maxSequence   int64 = -1 ^ (-1 << sequenceBits) // 支持的最大序列号数量
+	maxMachineId  int64 = -1 ^ (-1 << machineIDBits)
+	keep32Bits    int64 = -1 ^ (-1 << 32) + 1 // %b: 1 0000 0000 0000 0000 0000 0000 0000 0000
 )
 
 func NewUidGenerator(mid int64) *uid {
@@ -39,8 +39,8 @@ func (u *uid) NextUID() (uid uint32) {
 
 	now := time.Now().UnixMilli()
 	if u.timestamp == now {
-		// 如果当前序列超出24bits长度，则需要等待下一毫秒
-		// 下一毫秒将设置sequence:0
+		// 如果当前序列超出`maxSequence`长度，则需要等待下一毫秒
+		// 下一毫秒将设置sequence: 0
 		u.sequence = (u.sequence + 1) & maxSequence
 		if u.sequence == 0 {
 			for now <= u.timestamp {
@@ -51,7 +51,16 @@ func (u *uid) NextUID() (uid uint32) {
 		u.sequence = 0
 	}
 	u.timestamp = now
-	t := (u.timestamp - epoch) << sequenceBits
-	t = t | u.machineID<<machineIDBits | int64(u.sequence)
+
+	// 1. 得到当前时间与预设的起始时间（epoch）之间的时间差：T1(ms)；
+	// 2. 将T1左移`(machineIDBits + sequenceBits)`位，保留足够的空间给机器ID和序列号使用；
+	// 3. 将机器ID移动到合适位置合并；
+	// 4. 合并序列号。
+	//
+	// 这样，生成的唯一标识符就能够在高位正确地包含时间戳，中间位包含节点ID，低位包含序列号。
+	t := ((u.timestamp - epoch) << (machineIDBits + sequenceBits)) |
+		(u.machineID << sequenceBits) |
+		u.sequence
+
 	return uint32(t | keep32Bits)
 }
