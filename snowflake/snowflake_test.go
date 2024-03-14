@@ -15,7 +15,7 @@ const (
 	M        = 10000 * 100
 )
 
-func Test_TwoMachines100KGenerateUID(t *testing.T) {
+func Test_TwoMachinesGenerate100KUID(t *testing.T) {
 	mid := make(map[uint32]struct{})
 	start := time.Now().UnixMilli()
 	done := make(chan struct{})
@@ -28,7 +28,7 @@ func Test_TwoMachines100KGenerateUID(t *testing.T) {
 		for v := range ch {
 			_, exist := mid[v]
 			if exist {
-				t.Errorf("generate repeated id: %d", v)
+				t.Errorf("generated the repeated id: %d", v)
 				break
 			}
 			fr.write(v)
@@ -43,7 +43,7 @@ func Test_TwoMachines100KGenerateUID(t *testing.T) {
 
 	for g := 1; g <= num; g++ {
 		go func(g int) {
-			id := NewUidGenerator(int64(g))
+			id := NewIDGenerator(int64(g))
 			for i := 0; i < HundredK; i++ {
 				ch <- id.NextUID()
 			}
@@ -59,9 +59,9 @@ func Test_TwoMachines100KGenerateUID(t *testing.T) {
 	t.Logf("speed milli seconds: %d ms", time.Now().UnixMilli()-start)
 }
 
-func Test_1MUIDGenerate(t *testing.T) {
+func Test_Generates1MUID(t *testing.T) {
 	start := time.Now().UnixMilli()
-	id := NewUidGenerator(0)
+	id := NewIDGenerator(0)
 	mid := make(map[uint32]struct{})
 
 	fr := NewFiler()
@@ -71,7 +71,7 @@ func Test_1MUIDGenerate(t *testing.T) {
 		v := id.NextUID()
 		_, exist := mid[v]
 		if exist {
-			t.Errorf("%dth generate repeated id: %d", i, v)
+			t.Errorf("generated the %dth repeated id: %d", i, v)
 			return
 		}
 		mid[v] = struct{}{}
@@ -80,6 +80,28 @@ func Test_1MUIDGenerate(t *testing.T) {
 
 	fr.flush()
 	t.Logf("speed milli seconds: %d ms ", time.Now().UnixMilli()-start)
+}
+
+func Test_Generates4095EID(t *testing.T) {
+	var (
+		id  = NewIDGenerator(0)
+		mid = make(map[uint32]struct{})
+		fr  = NewFiler()
+	)
+	defer fr.close()
+
+	var i int64 = 0
+	for ; i <= maxSequence; i++ {
+		v := id.NextEID(i)
+		_, exist := mid[v]
+		if exist {
+			t.Errorf("generate the %dth repeated id: %d", i, v)
+			return
+		}
+		mid[v] = struct{}{}
+		fr.write(v)
+	}
+	fr.flush()
 }
 
 type Filer struct {
